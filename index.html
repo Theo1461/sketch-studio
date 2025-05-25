@@ -212,7 +212,9 @@
   <span id="imgFileName" style="color: #aaa; font-size: 14px; min-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
 </div>
   <div id="version">v1.1</div>
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.4/dist/ffmpeg.min.js"></script>
 <script>
+
 const objects = [];
 const frames = [];
 let animPlaying = false;
@@ -490,29 +492,39 @@ document.getElementById('saveProjectBtn').addEventListener('click', () => {
 
   URL.revokeObjectURL(url);
 });
+let recorder, recordedChunks = [];
 
 document.getElementById('startRecord').onclick = () => {
   recordedChunks = [];
   const stream = canvas.captureStream(60);
-
   recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
 
   recorder.ondataavailable = e => {
     if (e.data.size > 0) recordedChunks.push(e.data);
   };
 
-  recorder.onstop = () => {
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-    const url = URL.createObjectURL(blob);
+  recorder.onstop = async () => {
+    const webmBlob = new Blob(recordedChunks, { type: 'video/webm' });
+
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
+    await ffmpeg.load();
+
+    ffmpeg.FS('writeFile', 'input.webm', await fetchFile(webmBlob));
+    await ffmpeg.run('-i', 'input.webm', 'output.mp4');
+
+    const data = ffmpeg.FS('readFile', 'output.mp4');
+    const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+    const url = URL.createObjectURL(mp4Blob);
+
     const downloadLink = document.getElementById('downloadLink');
     downloadLink.href = url;
-    downloadLink.download = 'projection.webm';
+    downloadLink.download = 'projection.mp4';
     downloadLink.style.display = 'inline';
-    downloadLink.textContent = 'Export';
+    downloadLink.textContent = 'Export MP4';
   };
 
   recorder.start();
-
   document.getElementById('startRecord').disabled = true;
   document.getElementById('stopRecord').disabled = false;
 };
@@ -522,6 +534,7 @@ document.getElementById('stopRecord').onclick = () => {
   document.getElementById('startRecord').disabled = false;
   document.getElementById('stopRecord').disabled = true;
 };
+
 canvas.addEventListener('click', (e) => {
   if (animPlaying) return;
 
