@@ -218,6 +218,18 @@ let animPlaying = false;
 let animSpeed = 0.02;
 let recorder;
 let recordedChunks = [];
+self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activated!');
+});
+
+self.addEventListener('fetch', (event) => {
+  console.log('Fetching:', event.request.url);
+});
 
   document.getElementById('loadBtn').addEventListener('click', () => {
   document.getElementById('loadSktcsBtn').click();
