@@ -591,12 +591,26 @@ canvas.addEventListener('click', (e) => {
 
   draw();
 });
+let lastTapTime = 0;
+
 canvas.addEventListener('dblclick', (e) => {
   if (animPlaying) return;
+  handleDoubleEdit(e.clientX, e.clientY);
+});
 
+canvas.addEventListener('touchend', (e) => {
+  const currentTime = new Date().getTime();
+  if (currentTime - lastTapTime < 300) {
+    const touch = e.changedTouches[0];
+    handleDoubleEdit(touch.clientX, touch.clientY);
+  }
+  lastTapTime = currentTime;
+});
+
+function handleDoubleEdit(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
+  const mx = clientX - rect.left;
+  const my = clientY - rect.top;
 
   for (let i = objects.length - 1; i >= 0; i--) {
     const obj = objects[i];
@@ -619,7 +633,6 @@ canvas.addEventListener('dblclick', (e) => {
       } else if (action === 'resize') {
         const newWidth = parseInt(prompt('Enter new width:', obj.width || obj.size), 10);
         const newHeight = parseInt(prompt('Enter new height:', obj.height || obj.size), 10);
-
         if (!isNaN(newWidth) && !isNaN(newHeight)) {
           if (obj.img) {
             obj.width = newWidth;
@@ -628,31 +641,26 @@ canvas.addEventListener('dblclick', (e) => {
             obj.size = Math.max(newWidth, newHeight);
           }
           draw();
-        } else {
-          alert('Invalid size.');
         }
       } else if (action === 'rotate') {
         const newAngle = parseFloat(prompt('Enter rotation angle in degrees:', obj.rotation || 0));
         if (!isNaN(newAngle)) {
           obj.rotation = newAngle;
           draw();
-        } else {
-          alert('Invalid angle.');
         }
       } else if (action === 'opacity') {
         const newOpacity = parseFloat(prompt('Enter opacity (0 to 1):', obj.opacity ?? 1));
         if (!isNaN(newOpacity) && newOpacity >= 0 && newOpacity <= 1) {
           obj.opacity = newOpacity;
           draw();
-        } else {
-          alert('Opacity must be a number between 0 and 1.');
         }
-      } else if (action === 'nothing')
-          draw()
+      } else if (action === 'nothing') {
+        draw();
+      }
       break;
     }
   }
-});
+}
 
 window.addEventListener('keydown', (e) => {
   if (animPlaying) return;
