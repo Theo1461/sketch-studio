@@ -142,7 +142,7 @@
     font-weight: bold;
     margin-top: 10px;
   }
-  
+
   #version {
     position: fixed;
     bottom: 5px;
@@ -601,6 +601,63 @@ window.addEventListener('keydown', (e) => {
   }
   draw();
 });
+let draggingObj = null;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const selectedObj = objects.find(o => o.selected);
+  if (selectedObj &&
+      mx >= selectedObj.x && mx <= selectedObj.x + (selectedObj.width || selectedObj.size) &&
+      my >= selectedObj.y && my <= selectedObj.y + (selectedObj.height || selectedObj.size)) {
+    draggingObj = selectedObj;
+    dragOffsetX = mx - selectedObj.x;
+    dragOffsetY = my - selectedObj.y;
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!draggingObj) return;
+  const rect = canvas.getBoundingClientRect();
+  draggingObj.x = e.clientX - rect.left - dragOffsetX;
+  draggingObj.y = e.clientY - rect.top - dragOffsetY;
+  draw();
+});
+
+canvas.addEventListener('mouseup', () => draggingObj = null);
+canvas.addEventListener('mouseleave', () => draggingObj = null);
+
+canvas.addEventListener('touchstart', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const mx = touch.clientX - rect.left;
+  const my = touch.clientY - rect.top;
+
+  const selectedObj = objects.find(o => o.selected);
+  if (selectedObj &&
+      mx >= selectedObj.x && mx <= selectedObj.x + (selectedObj.width || selectedObj.size) &&
+      my >= selectedObj.y && my <= selectedObj.y + (selectedObj.height || selectedObj.size)) {
+    draggingObj = selectedObj;
+    dragOffsetX = mx - selectedObj.x;
+    dragOffsetY = my - selectedObj.y;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  if (!draggingObj) return;
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  draggingObj.x = touch.clientX - rect.left - dragOffsetX;
+  draggingObj.y = touch.clientY - rect.top - dragOffsetY;
+  draw();
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => draggingObj = null);
+
 document.getElementById('saveFrame').addEventListener('click', () => {
   const dur = frames.length === 0 ? 0 : 10;
   objects.forEach((object, index) => {
